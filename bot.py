@@ -8,6 +8,7 @@ Key Changes from Original:
   - WebDriver Manager for automatic driver management
   - Updated imports and error handling
   - Python 3.7+ compatible
+  - FIXED: Proxy Detection & Automation Detection (September 2026)
 
 Usage:
     python bot.py
@@ -95,6 +96,12 @@ def initialize_webdriver(browser_type):
         OLD: driver = webdriver.Chrome(executable_path='./webdriver/chromedriver')
         NEW: Uses webdriver-manager for automatic driver management
     
+    🎭 ANTI-DETECTION OPTIONS ADDED (September 2026):
+        - Disables automation-controlled flags
+        - Hides WebDriver detection
+        - Uses realistic User-Agent strings
+        - Disables unwanted browser features
+    
     Args:
         browser_type (str): 'chrome' or 'firefox'
         
@@ -109,8 +116,38 @@ def initialize_webdriver(browser_type):
             print(f"{fc}{sd}[{fm}{sb}*{fc}{sd}] {fy}Initializing Chrome WebDriver...", end=" ")
             
             chrome_options = ChromeOptions()
+            
+            # ✅ ANTI-DETECTION OPTIONS (Fix for Proxy Error)
+            chrome_options.add_argument('--disable-blink-features=AutomationControlled')
+            chrome_options.add_experimental_option('excludeSwitches', ['enable-automation'])
+            chrome_options.add_experimental_option('useAutomationExtension', False)
+            chrome_options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
+            
+            # ✅ Additional anti-detection arguments
+            chrome_options.add_argument('--disable-web-resources')
+            chrome_options.add_argument('--disable-client-side-phishing-detection')
+            chrome_options.add_argument('--disable-sync')
+            chrome_options.add_argument('--disable-plugins')
+            chrome_options.add_argument('--disable-images')
+            chrome_options.add_argument('--disable-default-apps')
+            
             service = ChromeService(ChromeDriverManager().install())
             driver = webdriver.Chrome(service=service, options=chrome_options)
+            
+            # ✅ Execute stealth JavaScript to hide automation
+            driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {
+                'source': '''
+                    Object.defineProperty(navigator, 'webdriver', {
+                        get: () => false,
+                    });
+                    Object.defineProperty(navigator, 'plugins', {
+                        get: () => [1, 2, 3, 4, 5],
+                    });
+                    Object.defineProperty(navigator, 'languages', {
+                        get: () => ['en-US', 'en'],
+                    });
+                '''
+            })
             
             print(f"{fg}✓ Done")
             return driver
@@ -119,6 +156,15 @@ def initialize_webdriver(browser_type):
             print(f"{fc}{sd}[{fm}{sb}*{fc}{sd}] {fy}Initializing Firefox WebDriver...", end=" ")
             
             firefox_options = FirefoxOptions()
+            
+            # ✅ ANTI-DETECTION OPTIONS FOR FIREFOX
+            firefox_options.add_argument('--disable-blink-features=AutomationControlled')
+            firefox_options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0')
+            
+            # ✅ Firefox preferences
+            firefox_options.set_preference('dom.webdriver.enabled', False)
+            firefox_options.set_preference('useAutomationExtension', False)
+            
             service = FirefoxService(GeckoDriverManager().install())
             driver = webdriver.Firefox(service=service, options=firefox_options)
             
@@ -257,7 +303,7 @@ def start_bot(start_url, email, college, collegeID):
         # Save account details
         with open('myccAcc.txt', 'a') as fp:
             birthDay = str(randomMonth) + '/' + str(randomDay) + '/' + str(randomYear)
-            account_details = f'Email - {email} | Password - generated | UserName - {firstName}{postFix(7)} | First Name - {firstName} | Middle Name - {middleName} | Last Name - {LastName} | College - {college} | Date - {birthDay}\n'
+            account_details = f'Email - {email} | Password - generated | UserName - {firstName}{postFix(7)} | First Name - {firstName} | Middle Name - {middleName} | Last Name - {LastName} | Birthday - {birthDay} | Phone - {studentPhone} | College - {college}\n'
             fp.write(account_details)
         
         print(fc + sd + '[' + fm + sb + '*' + fc + sd + '] ' + fg + 'Account details saved to myccAcc.txt')
